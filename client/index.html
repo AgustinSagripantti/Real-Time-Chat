@@ -23,7 +23,8 @@
       return randomUsername
     }
 
-    const socket = io({
+    const socket = io('https://realtimechatbackend.vercel.app',{
+      withCredentials: true,
       auth: {
         username: await getUsername(),
         serverOffset: 0

@@ -3,6 +3,7 @@ import logger from 'morgan'
 import { Server } from 'socket.io'
 import { createServer } from 'node:http'
 import pool from './db.js'
+import cors from 'cors';
 
 const port = process.env.PORT ?? 3000
 
@@ -11,11 +12,24 @@ const server = createServer(app)
 //Server es una clase de socket.io que se utiliza para crear una instancia del servidor de WebSocket. 
 //Se pasa el servidor HTTP (server) como argumento al constructor de Server
 const io = new Server(server, {
+  cors: {
+    origin: 'https://realtimechatfrontend.vercel.app', 
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true, 
+  },
   connectionStateRecovery: {}  //Este es un objeto de configuración opcional. 
                             //Habilita la recuperación del estado de conexión en caso de desconexiones. 
                             //Permite que los clientes recuperen su estado anterior (por ejemplo, mensajes antiguos) cuando se reconectan. 
                             //El objeto vacío {} significa que se está habilitando la recuperación del estado sin configuraciones adicionales.
 })
+
+const corsOptions = {
+  origin: 'https://realtimechatfrontend.vercel.app', 
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true, 
+};
+
+app.use(cors(corsOptions));
 
 //Diferencia entre socket e io
 //io: Se usa para emitir eventos a todos los clientes conectados, manejar conexiones y desconexiones globales, y para enviar mensajes a todos los clientes simultáneamente.
@@ -33,7 +47,7 @@ io.on('connection', async (socket) => {
     let result
     try {
       [result] = await pool.execute(
-        'INSERT INTO messages (content, user) VALUES (?, ?)',
+        'INSERT INTO messages (content, username) VALUES (?, ?)',
         [msg, username]
       );
     } catch (e) {
@@ -58,12 +72,6 @@ io.on('connection', async (socket) => {
       console.error(e)
     }
   }
-})
-
-app.use(logger('dev'))
-
-app.get('/', (req, res) => {
-  res.sendFile(process.cwd() + '/client/index.html')
 })
 
 server.listen(port, () => {
